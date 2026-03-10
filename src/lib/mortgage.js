@@ -19,6 +19,11 @@ const percentFormatter = new Intl.NumberFormat("cs-CZ", {
   maximumFractionDigits: 2
 });
 
+const compactPercentLegendFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0
+});
+
 const dateFormatter = new Intl.DateTimeFormat("cs-CZ", {
   day: "2-digit",
   month: "2-digit",
@@ -31,6 +36,14 @@ export function formatCurrency(value) {
 
 export function formatPercent(value) {
   return `${percentFormatter.format(value)} %`;
+}
+
+export function formatPercentLegend(value) {
+  if (Math.abs(value) >= 1000) {
+    return `${compactPercentLegendFormatter.format(value)} %`;
+  }
+
+  return formatPercent(value);
 }
 
 function toNumber(value) {
@@ -168,11 +181,14 @@ export function calculateInvestment({
   }
 
   const investedPrincipal = normalizedContribution * totalContributions;
+  const appreciationPercent =
+    investedPrincipal === 0 ? 0 : (balance / investedPrincipal) * 100;
 
   return {
     futureValue: balance,
     investedPrincipal,
     profit: balance - investedPrincipal,
+    appreciationPercent,
     totalContributions,
     years: normalizedYears
   };
@@ -181,27 +197,42 @@ export function calculateInvestment({
 export function calculatePropertyYield({
   propertyValue,
   annualYieldPercent,
-  finalPrice
+  finalPrice,
+  initialCapital
 }) {
   const normalizedPropertyValue = toNumber(propertyValue);
   const normalizedAnnualYieldPercent = toNumber(annualYieldPercent);
   const normalizedFinalPrice = toNumber(finalPrice);
+  const normalizedInitialCapital = toNumber(initialCapital);
   const annualYieldAmount =
     normalizedPropertyValue * (normalizedAnnualYieldPercent / 100);
+  const monthlyYieldAmount = annualYieldAmount / 12;
   const horizons = [5, 10, 15, 20, 25, 30].map((years) => {
-    const rentalIncome = annualYieldAmount * years;
-    const totalValue = rentalIncome + normalizedFinalPrice;
+    const estimatedPrice =
+      normalizedPropertyValue *
+      Math.pow(1 + normalizedAnnualYieldPercent / 100, years);
+    const profitAgainstFinalPrice = estimatedPrice - normalizedFinalPrice;
+    const totalProfit = estimatedPrice - normalizedPropertyValue;
+    const totalYieldPercent =
+      normalizedPropertyValue === 0 ? 0 : (totalProfit / normalizedPropertyValue) * 100;
+    const leveragedYieldPercent =
+      normalizedInitialCapital === 0 ? 0 : (estimatedPrice / normalizedInitialCapital) * 100;
 
     return {
       years,
-      rentalIncome,
-      totalValue
+      estimatedPrice,
+      profitAgainstFinalPrice,
+      totalProfit,
+      totalYieldPercent,
+      leveragedYieldPercent
     };
   });
 
   return {
     annualYieldAmount,
+    monthlyYieldAmount,
     finalPrice: normalizedFinalPrice,
+    initialCapital: normalizedInitialCapital,
     horizons
   };
 }

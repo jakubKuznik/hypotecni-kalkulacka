@@ -6,14 +6,16 @@ import {
   calculatePropertyYield,
   fixationOptions,
   formatCurrency,
+  formatPercentLegend,
   formatPercent,
   intervalOptions
 } from "../lib/mortgage.js";
 
 const initialValues = {
-  principal: "10000000",
-  annualRate: "6",
-  years: "20",
+  principal: "8000000",
+  ownCapitalPercent: "10",
+  annualRate: "5",
+  years: "30",
   paymentsPerYear: "12",
   fixationYears: "5",
   firstPaymentDate: "2026-04-01",
@@ -21,9 +23,7 @@ const initialValues = {
   investmentContribution: "",
   investmentYears: "",
   inflationRate: "3",
-  propertyValue: "12000000",
-  propertyAnnualYield: "3",
-  propertyFinalPrice: "18000000"
+  propertyAnnualYield: "3"
 };
 
 function SummaryCard({ label, value, note, highlight = false }) {
@@ -138,7 +138,11 @@ function ScheduleTable({ rows, fixationYears }) {
 function MortgageCalculator() {
   const [values, setValues] = useState(initialValues);
 
+  const principalAmount = Number(values.principal || 0);
+  const ownCapitalPercent = Number(values.ownCapitalPercent || 0);
   const result = calculateMortgage(values);
+  const ownCapital = principalAmount * (ownCapitalPercent / 100);
+  const propertyValue = principalAmount + ownCapital;
   const investmentContribution =
     values.investmentContribution === ""
       ? result.payment
@@ -171,16 +175,17 @@ function MortgageCalculator() {
       ? 0
       : (investment.profit / investment.futureValue) * 100;
   const propertyYield = calculatePropertyYield({
-    propertyValue: values.propertyValue,
+    propertyValue,
     annualYieldPercent: values.propertyAnnualYield,
-    finalPrice: values.propertyFinalPrice
+    finalPrice: result.totalPaid + ownCapital,
+    initialCapital: ownCapital
   });
   const inflationView = calculateInflationAdjustedPayment({
     payment: result.payment,
     annualInflation: values.inflationRate
   });
   const maxPropertyValue = Math.max(
-    ...propertyYield.horizons.map((item) => item.totalValue),
+    ...propertyYield.horizons.map((item) => item.estimatedPrice),
     1
   );
   const maxInflationValue = Math.max(
@@ -223,6 +228,17 @@ function MortgageCalculator() {
               <div className="input-wrap">
                 <input max="30" min="0.1" name="annualRate" step="0.1" type="number" value={values.annualRate} onChange={handleChange} />
                 <em>%</em>
+              </div>
+            </label>
+
+            <label className="field">
+              <span>Vlastni kapital</span>
+              <div className="select-wrap">
+                <select name="ownCapitalPercent" value={values.ownCapitalPercent} onChange={handleChange}>
+                  <option value="10">10 %</option>
+                  <option value="20">20 %</option>
+                  <option value="30">30 %</option>
+                </select>
               </div>
             </label>
 
@@ -287,14 +303,19 @@ function MortgageCalculator() {
             <SummaryCard label="Celkova castka" value={formatCurrency(result.totalPaid)} />
             <SummaryCard label="Celkovy urok" value={formatCurrency(result.totalInterest)} />
             <SummaryCard label="Pocet splatek" value={result.totalPayments} />
-            <SummaryCard
-              label="Zbyvajici jistina po fixaci"
-              value={formatCurrency(result.remainingAfterFixation)}
-              note={`Konec fixace: ${result.fixationEndDate}`}
-            />
-            <SummaryCard label="Urok za prvni fixaci" value={formatCurrency(result.fixationInterestPaid)} />
-            <SummaryCard label="Jistina za prvni fixaci" value={formatCurrency(result.fixationPrincipalPaid)} />
-          </div>
+          <SummaryCard
+            label="Zbyvajici jistina po fixaci"
+            value={formatCurrency(result.remainingAfterFixation)}
+            note={`Konec fixace: ${result.fixationEndDate}`}
+          />
+          <SummaryCard
+            label="Vlastni kapital"
+            value={formatCurrency(ownCapital)}
+            note={`${values.ownCapitalPercent} %`}
+          />
+          <SummaryCard label="Urok za prvni fixaci" value={formatCurrency(result.fixationInterestPaid)} />
+          <SummaryCard label="Jistina za prvni fixaci" value={formatCurrency(result.fixationPrincipalPaid)} />
+        </div>
         </article>
       </section>
 
@@ -363,6 +384,7 @@ function MortgageCalculator() {
             <SummaryCard
               label="Vynos investice"
               value={formatCurrency(investment.profit)}
+              note={`${formatPercent(investment.appreciationPercent)}`}
             />
             <SummaryCard
               label="Pravidelny vklad"
@@ -454,26 +476,16 @@ function MortgageCalculator() {
             <h2>Vyvoj hodnoty po 5 az 30 letech</h2>
           </div>
           <p className="schedule-note">
-            Vypocet kombinuje pravidelny rocni vynos z nemovitosti a finalni
-            prodejni cenu.
+            Vypocet pocita slozene rocni zhodnoceni ceny nemovitosti a porovnava
+            ho s finalni cenou.
           </p>
         </div>
 
         <div className="field-grid">
-          <label className="field">
+          <div className="field field-static">
             <span>Hodnota nemovitosti</span>
-            <div className="input-wrap">
-              <input
-                min="0"
-                name="propertyValue"
-                step="10000"
-                type="number"
-                value={values.propertyValue}
-                onChange={handleChange}
-              />
-              <em>Kc</em>
-            </div>
-          </label>
+            <strong>{formatCurrency(propertyValue)}</strong>
+          </div>
 
           <label className="field">
             <span>Odhadovany rocni vynos</span>
@@ -490,49 +502,58 @@ function MortgageCalculator() {
             </div>
           </label>
 
-          <label className="field">
-            <span>Finalni cena</span>
-            <div className="input-wrap">
-              <input
-                min="0"
-                name="propertyFinalPrice"
-                step="10000"
-                type="number"
-                value={values.propertyFinalPrice}
-                onChange={handleChange}
-              />
-              <em>Kc</em>
-            </div>
-          </label>
         </div>
 
         <div className="summary-grid">
           <SummaryCard
             highlight
-            label="Rocni vynos v korunach"
-            value={formatCurrency(propertyYield.annualYieldAmount)}
+            label="Odhadovana cena nemovitosti po 30 letech"
+            value={formatCurrency(propertyYield.horizons.at(-1)?.estimatedPrice ?? 0)}
           />
           <SummaryCard
-            label="Finalni prodejni cena"
+            label="Finalni cena nemovitosti (zapocetena cena hypoteky)"
             value={formatCurrency(propertyYield.finalPrice)}
+            note="automaticky podle celkove castky hypoteky"
           />
           <SummaryCard
-            label="Celkem po 30 letech"
-            value={formatCurrency(propertyYield.horizons.at(-1)?.totalValue ?? 0)}
+            label="Pocatecni investovany kapital"
+            value={formatCurrency(ownCapital)}
+            note={`${values.ownCapitalPercent} % z vyse uveru`}
+          />
+          <SummaryCard
+            label="Mesicni vynos"
+            value={formatCurrency(propertyYield.monthlyYieldAmount)}
+          />
+          <SummaryCard
+            label="O kolik naroslta hodnota nemovitosti"
+            value={formatCurrency(propertyYield.horizons.at(-1)?.totalProfit ?? 0)}
+          />
+          <SummaryCard
+            label="Cisty Zisk se zapocitanou cenou hypoteky"
+            value={formatCurrency(propertyYield.horizons.at(-1)?.profitAgainstFinalPrice ?? 0)}
+          />
+          <SummaryCard
+            label="Vynos v procentech"
+            value={formatPercent(propertyYield.horizons.at(-1)?.totalYieldPercent ?? 0)}
+          />
+          <SummaryCard
+            label="Zhodnoceni s pakou po 30 letech"
+            value={formatPercent(propertyYield.horizons.at(-1)?.leveragedYieldPercent ?? 0)}
           />
         </div>
 
         <div className="property-chart">
           {propertyYield.horizons.map((item) => (
             <div key={item.years} className="property-bar-group">
-              <div className="property-bar-value">{formatCurrency(item.totalValue)}</div>
+              <div className="property-bar-value">{formatCurrency(item.estimatedPrice)}</div>
               <div className="property-bar-track">
                 <div
                   className="property-bar-fill"
-                  style={{ height: `${(item.totalValue / maxPropertyValue) * 100}%` }}
+                  style={{ height: `${(item.estimatedPrice / maxPropertyValue) * 100}%` }}
                 />
               </div>
               <strong>{item.years} let</strong>
+              <span className="property-bar-note">{formatPercentLegend(item.leveragedYieldPercent)}</span>
             </div>
           ))}
         </div>
