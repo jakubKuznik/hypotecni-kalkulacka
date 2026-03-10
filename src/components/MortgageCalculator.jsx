@@ -542,7 +542,7 @@ function MortgageCalculator() {
         <div className="results-header">
           <div>
             <p className="results-label">Inflacni zohledneni</p>
-            <h2>Kolik ma stejna splatka hodnotu v dnesnich penezich</h2>
+            <h2>Kolik ma stejna splatka hodnotu v budoucích penezich</h2>
           </div>
           <p className="schedule-note">
             Graf ukazuje realnou hodnotu stejne nominalni splatky pri slozene
