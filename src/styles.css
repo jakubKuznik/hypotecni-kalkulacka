@@ -205,6 +205,10 @@ h2 {
   margin-bottom: 1rem;
 }
 
+.inflation-panel {
+  margin-bottom: 1rem;
+}
+
 .investment-layout {
   display: grid;
   grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
@@ -213,7 +217,7 @@ h2 {
 }
 
 .single-input {
-  grid-template-columns: minmax(0, 320px);
+  grid-template-columns: repeat(2, minmax(0, 320px));
   margin-top: 1rem;
 }
 
@@ -352,6 +356,10 @@ h2 {
   min-height: 12px;
   border-radius: 10px;
   background: linear-gradient(180deg, #7c3aed, #f97316);
+}
+
+.inflation-bar-fill {
+  background: linear-gradient(180deg, #0f172a, #38bdf8);
 }
 
 .property-bar-group strong {

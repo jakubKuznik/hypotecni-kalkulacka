@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   calculateInvestment,
+  calculateInflationAdjustedPayment,
   calculateMortgage,
   calculatePropertyYield,
   fixationOptions,
@@ -18,6 +19,8 @@ const initialValues = {
   firstPaymentDate: "2026-04-01",
   investmentReturn: "10",
   investmentContribution: "",
+  investmentYears: "",
+  inflationRate: "3",
   propertyValue: "12000000",
   propertyAnnualYield: "3",
   propertyFinalPrice: "18000000"
@@ -140,10 +143,12 @@ function MortgageCalculator() {
     values.investmentContribution === ""
       ? result.payment
       : Number(values.investmentContribution);
+  const investmentYears =
+    values.investmentYears === "" ? Number(values.years || 0) : Number(values.investmentYears);
   const investment = calculateInvestment({
     contribution: investmentContribution,
     annualReturn: values.investmentReturn,
-    years: 30,
+    years: investmentYears,
     contributionsPerYear: values.paymentsPerYear
   });
   const principalShare = result.totalPaid === 0 ? 0 : (Number(values.principal || 0) / result.totalPaid) * 100;
@@ -170,8 +175,16 @@ function MortgageCalculator() {
     annualYieldPercent: values.propertyAnnualYield,
     finalPrice: values.propertyFinalPrice
   });
+  const inflationView = calculateInflationAdjustedPayment({
+    payment: result.payment,
+    annualInflation: values.inflationRate
+  });
   const maxPropertyValue = Math.max(
     ...propertyYield.horizons.map((item) => item.totalValue),
+    1
+  );
+  const maxInflationValue = Math.max(
+    ...inflationView.horizons.map((item) => item.presentValue),
     1
   );
 
@@ -311,7 +324,7 @@ function MortgageCalculator() {
         <div className="results-header">
           <div>
             <p className="results-label">Investicni graf</p>
-            <h2>Co by udelala stejna castka za 30 let</h2>
+            <h2>Co by udelala stejna castka za zvolene obdobi</h2>
           </div>
           <p className="schedule-note">
             Kalkulace pocita s pravidelnym investovanim castky ve vysi splatky
@@ -339,8 +352,9 @@ function MortgageCalculator() {
           <div className="summary-grid">
             <SummaryCard
               highlight
-              label="Budouci hodnota po 30 letech"
+              label="Budouci hodnota investice"
               value={formatCurrency(investment.futureValue)}
+              note={`${investment.years} let`}
             />
             <SummaryCard
               label="Celkove vlozeno"
@@ -375,6 +389,21 @@ function MortgageCalculator() {
                 onChange={handleChange}
               />
               <em>Kc</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Investicni horizont</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="investmentYears"
+                step="1"
+                type="number"
+                value={values.investmentYears}
+                onChange={handleChange}
+              />
+              <em>let</em>
             </div>
           </label>
         </div>
@@ -501,6 +530,71 @@ function MortgageCalculator() {
                 <div
                   className="property-bar-fill"
                   style={{ height: `${(item.totalValue / maxPropertyValue) * 100}%` }}
+                />
+              </div>
+              <strong>{item.years} let</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel inflation-panel">
+        <div className="results-header">
+          <div>
+            <p className="results-label">Inflacni zohledneni</p>
+            <h2>Kolik ma stejna splatka hodnotu v dnesnich penezich</h2>
+          </div>
+          <p className="schedule-note">
+            Graf ukazuje realnou hodnotu stejne nominalni splatky pri slozene
+            inflaci v case.
+          </p>
+        </div>
+
+        <div className="investment-layout">
+          <label className="field">
+            <span>Odhadovana inflace</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="inflationRate"
+                step="0.1"
+                type="number"
+                value={values.inflationRate}
+                onChange={handleChange}
+              />
+              <em>%</em>
+            </div>
+          </label>
+
+          <div className="summary-grid">
+            <SummaryCard
+              highlight
+              label="Dnesni hodnota splatky za 10 let"
+              value={formatCurrency(
+                inflationView.horizons.find((item) => item.years === 10)?.presentValue ?? 0
+              )}
+            />
+            <SummaryCard
+              label="Aktualni splatka"
+              value={formatCurrency(inflationView.currentPayment)}
+            />
+            <SummaryCard
+              label="Dnesni hodnota splatky za 30 let"
+              value={formatCurrency(
+                inflationView.horizons.find((item) => item.years === 30)?.presentValue ?? 0
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="property-chart inflation-chart">
+          {inflationView.horizons.map((item) => (
+            <div key={item.years} className="property-bar-group">
+              <div className="property-bar-value">{formatCurrency(item.presentValue)}</div>
+              <div className="property-bar-track">
+                <div
+                  className="property-bar-fill inflation-bar-fill"
+                  style={{ height: `${(item.presentValue / maxInflationValue) * 100}%` }}
                 />
               </div>
               <strong>{item.years} let</strong>

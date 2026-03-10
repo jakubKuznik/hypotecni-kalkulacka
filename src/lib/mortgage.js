@@ -205,3 +205,26 @@ export function calculatePropertyYield({
     horizons
   };
 }
+
+export function calculateInflationAdjustedPayment({
+  payment,
+  annualInflation
+}) {
+  const normalizedPayment = toNumber(payment);
+  const normalizedAnnualInflation = toNumber(annualInflation);
+  const horizons = [5, 10, 15, 20, 25, 30].map((years) => {
+    const presentValue =
+      normalizedPayment / Math.pow(1 + normalizedAnnualInflation / 100, years);
+
+    return {
+      years,
+      presentValue
+    };
+  });
+
+  return {
+    currentPayment: normalizedPayment,
+    annualInflation: normalizedAnnualInflation,
+    horizons
+  };
+}
