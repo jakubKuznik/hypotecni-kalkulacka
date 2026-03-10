@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   calculateInvestment,
   calculateMortgage,
+  calculatePropertyYield,
   fixationOptions,
   formatCurrency,
   formatPercent,
@@ -16,7 +17,10 @@ const initialValues = {
   fixationYears: "5",
   firstPaymentDate: "2026-04-01",
   investmentReturn: "10",
-  investmentContribution: ""
+  investmentContribution: "",
+  propertyValue: "12000000",
+  propertyAnnualYield: "3",
+  propertyFinalPrice: "18000000"
 };
 
 function SummaryCard({ label, value, note, highlight = false }) {
@@ -43,7 +47,6 @@ function ChartPanel({
     <section className="panel chart-panel">
       <div className="schedule-header">
         <div>
-          <p className="results-label">Kolacovy graf</p>
           <h2>{title}</h2>
         </div>
         <p className="schedule-note">{note}</p>
@@ -162,6 +165,15 @@ function MortgageCalculator() {
     investment.futureValue === 0
       ? 0
       : (investment.profit / investment.futureValue) * 100;
+  const propertyYield = calculatePropertyYield({
+    propertyValue: values.propertyValue,
+    annualYieldPercent: values.propertyAnnualYield,
+    finalPrice: values.propertyFinalPrice
+  });
+  const maxPropertyValue = Math.max(
+    ...propertyYield.horizons.map((item) => item.totalValue),
+    1
+  );
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -403,6 +415,97 @@ function MortgageCalculator() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="panel property-panel">
+        <div className="results-header">
+          <div>
+            <p className="results-label">Vynosnost nemovitosti</p>
+            <h2>Vyvoj hodnoty po 5 az 30 letech</h2>
+          </div>
+          <p className="schedule-note">
+            Vypocet kombinuje pravidelny rocni vynos z nemovitosti a finalni
+            prodejni cenu.
+          </p>
+        </div>
+
+        <div className="field-grid">
+          <label className="field">
+            <span>Hodnota nemovitosti</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="propertyValue"
+                step="10000"
+                type="number"
+                value={values.propertyValue}
+                onChange={handleChange}
+              />
+              <em>Kc</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Odhadovany rocni vynos</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="propertyAnnualYield"
+                step="0.1"
+                type="number"
+                value={values.propertyAnnualYield}
+                onChange={handleChange}
+              />
+              <em>%</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Finalni cena</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="propertyFinalPrice"
+                step="10000"
+                type="number"
+                value={values.propertyFinalPrice}
+                onChange={handleChange}
+              />
+              <em>Kc</em>
+            </div>
+          </label>
+        </div>
+
+        <div className="summary-grid">
+          <SummaryCard
+            highlight
+            label="Rocni vynos v korunach"
+            value={formatCurrency(propertyYield.annualYieldAmount)}
+          />
+          <SummaryCard
+            label="Finalni prodejni cena"
+            value={formatCurrency(propertyYield.finalPrice)}
+          />
+          <SummaryCard
+            label="Celkem po 30 letech"
+            value={formatCurrency(propertyYield.horizons.at(-1)?.totalValue ?? 0)}
+          />
+        </div>
+
+        <div className="property-chart">
+          {propertyYield.horizons.map((item) => (
+            <div key={item.years} className="property-bar-group">
+              <div className="property-bar-value">{formatCurrency(item.totalValue)}</div>
+              <div className="property-bar-track">
+                <div
+                  className="property-bar-fill"
+                  style={{ height: `${(item.totalValue / maxPropertyValue) * 100}%` }}
+                />
+              </div>
+              <strong>{item.years} let</strong>
+            </div>
+          ))}
         </div>
       </section>
 

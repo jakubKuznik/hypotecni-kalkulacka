@@ -177,3 +177,31 @@ export function calculateInvestment({
     years: normalizedYears
   };
 }
+
+export function calculatePropertyYield({
+  propertyValue,
+  annualYieldPercent,
+  finalPrice
+}) {
+  const normalizedPropertyValue = toNumber(propertyValue);
+  const normalizedAnnualYieldPercent = toNumber(annualYieldPercent);
+  const normalizedFinalPrice = toNumber(finalPrice);
+  const annualYieldAmount =
+    normalizedPropertyValue * (normalizedAnnualYieldPercent / 100);
+  const horizons = [5, 10, 15, 20, 25, 30].map((years) => {
+    const rentalIncome = annualYieldAmount * years;
+    const totalValue = rentalIncome + normalizedFinalPrice;
+
+    return {
+      years,
+      rentalIncome,
+      totalValue
+    };
+  });
+
+  return {
+    annualYieldAmount,
+    finalPrice: normalizedFinalPrice,
+    horizons
+  };
+}
