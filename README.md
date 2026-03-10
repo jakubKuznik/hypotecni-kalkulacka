@@ -1,13 +1,7 @@
 # hypotecni-kalkulacka
 
-Zakladni React projekt pro hypotecni kalkulacku zamerenou na cesky trh.
+Ukazuje klasický výpočet hypotéky, odhadované zhodnocení nemovitosti, přehled částek pro jednotlivé doby fixace i srovnání, jak by to vyšlo, kdybychom místo toho investovali do finančních produktů s určitým zhodnocením.
 
-## Napady do dalsi faze
-
-- klasicka kalkulacka: castka, vlastni kapital, procento uroku a graf
-- historie urokovych sazeb v CR
-- vysledna castka po ukoncene fixaci 1, 2, 3, 5, 10 let
-- hypotecni kalendar: zadani pocatecniho data a vypocet uhrazenych splatek
 
 ## Jak projekt spustit
 
