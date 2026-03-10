@@ -33,6 +33,15 @@ export function formatPercent(value) {
   return `${percentFormatter.format(value)} %`;
 }
 
+function toNumber(value) {
+  if (value === "" || value === null || value === undefined) {
+    return 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function addMonths(date, monthsToAdd) {
   const nextDate = new Date(date);
   nextDate.setMonth(nextDate.getMonth() + monthsToAdd);
@@ -43,155 +52,128 @@ function formatDate(date) {
   return dateFormatter.format(date);
 }
 
-function calculatePayment(principal, annualRate, totalPayments, paymentsPerYear) {
-  const periodicRate = annualRate / 100 / paymentsPerYear;
-
-  if (totalPayments <= 0) {
-    return 0;
-  }
-
-  if (periodicRate === 0) {
-    return principal / totalPayments;
-  }
-
-  return (
-    (principal * periodicRate) /
-    (1 - Math.pow(1 + periodicRate, -totalPayments))
-  );
-}
-
-function buildScheduleSegment({
-  principal,
-  annualRate,
-  amortizationPayments,
-  executedPayments,
-  displayedPayments,
-  paymentsPerYear,
-  startDate,
-  startIndex
-}) {
-  const payment = calculatePayment(
-    principal,
-    annualRate,
-    amortizationPayments,
-    paymentsPerYear
-  );
-  const periodicRate = annualRate / 100 / paymentsPerYear;
-  const monthsBetweenPayments = 12 / paymentsPerYear;
-  let balance = principal;
-  let totalInterest = 0;
-  let totalPrincipal = 0;
-  const schedule = [];
-
-  for (let offset = 0; offset < executedPayments; offset += 1) {
-    const interest = balance * periodicRate;
-    const principalPart = Math.min(balance, payment - interest);
-    balance = Math.max(0, balance - principalPart);
-    totalInterest += interest;
-    totalPrincipal += principalPart;
-
-    if (offset < displayedPayments) {
-      schedule.push({
-        index: startIndex + offset,
-        date: formatDate(addMonths(startDate, offset * monthsBetweenPayments)),
-        payment,
-        interest,
-        principal: principalPart,
-        balance
-      });
-    }
-  }
-
-  return {
-    payment,
-    totalInterest,
-    totalPrincipal,
-    totalPaid: payment * executedPayments,
-    remainingBalance: balance,
-    paymentsCount: executedPayments,
-    displayedPayments,
-    schedule,
-    endDate:
-      executedPayments > 0
-        ? formatDate(addMonths(startDate, (executedPayments - 1) * monthsBetweenPayments))
-        : formatDate(startDate)
-  };
-}
-
 export function calculateMortgage({
   principal,
   annualRate,
   years,
   paymentsPerYear,
   fixationYears,
-  firstPaymentDate,
-  refinanceRate
+  firstPaymentDate
 }) {
-  const totalPayments = years * paymentsPerYear;
-  const fixationPayments = Math.min(totalPayments, fixationYears * paymentsPerYear);
-  const remainingPayments = Math.max(0, totalPayments - fixationPayments);
-  const startDate = new Date(`${firstPaymentDate}T00:00:00`);
-  const firstSegment = buildScheduleSegment({
-    principal,
-    annualRate,
-    amortizationPayments: totalPayments,
-    executedPayments: fixationPayments,
-    displayedPayments: fixationPayments,
-    paymentsPerYear,
-    startDate,
-    startIndex: 1
-  });
+  const normalizedPrincipal = toNumber(principal);
+  const normalizedAnnualRate = toNumber(annualRate);
+  const normalizedYears = toNumber(years);
+  const normalizedPaymentsPerYear = toNumber(paymentsPerYear);
+  const normalizedFixationYears = toNumber(fixationYears);
+  const normalizedTotalPayments = normalizedYears * normalizedPaymentsPerYear;
 
-  const refinancePayments = Math.min(
-    remainingPayments,
-    fixationYears * paymentsPerYear
+  if (normalizedTotalPayments <= 0 || normalizedPaymentsPerYear <= 0) {
+    return {
+      payment: 0,
+      totalPayments: 0,
+      totalPaid: 0,
+      totalInterest: 0,
+      fixationInterestPaid: 0,
+      fixationPrincipalPaid: 0,
+      fixationTotalPaid: 0,
+      remainingAfterFixation: normalizedPrincipal,
+      fixationEndDate: firstPaymentDate,
+      schedule: [],
+      intervalLabel: `${normalizedPaymentsPerYear}x rocne`
+    };
+  }
+
+  const periodicRate = normalizedAnnualRate / 100 / normalizedPaymentsPerYear;
+  const monthsBetweenPayments = 12 / normalizedPaymentsPerYear;
+  const fixationPayments = Math.min(
+    normalizedTotalPayments,
+    normalizedFixationYears * normalizedPaymentsPerYear
   );
-  const refinanceStartDate = addMonths(startDate, (12 / paymentsPerYear) * fixationPayments);
-  const normalizedRefinanceRate = Number.isFinite(refinanceRate)
-    ? refinanceRate
-    : annualRate;
+  const startDate = new Date(`${firstPaymentDate}T00:00:00`);
 
-  const refinanceSegment =
-    remainingPayments > 0
-      ? buildScheduleSegment({
-          principal: firstSegment.remainingBalance,
-          annualRate: normalizedRefinanceRate,
-          amortizationPayments: remainingPayments,
-          executedPayments: remainingPayments,
-          displayedPayments: refinancePayments,
-          paymentsPerYear,
-          startDate: refinanceStartDate,
-          startIndex: fixationPayments + 1
-        })
-      : null;
+  const payment =
+    periodicRate === 0
+      ? normalizedPrincipal / normalizedTotalPayments
+      : (normalizedPrincipal * periodicRate) /
+        (1 - Math.pow(1 + periodicRate, -normalizedTotalPayments));
 
-  const totalInterest =
-    firstSegment.totalInterest +
-    (refinanceSegment?.totalInterest ?? 0);
-  const totalPaid =
-    firstSegment.totalPaid +
-    (refinanceSegment?.totalPaid ?? 0);
+  let balance = normalizedPrincipal;
+  let totalInterest = 0;
+  let fixationInterestPaid = 0;
+  let fixationPrincipalPaid = 0;
+  const schedule = [];
+  let remainingAfterFixation = normalizedPrincipal;
+  let fixationEndDate = firstPaymentDate;
+
+  for (let index = 1; index <= normalizedTotalPayments; index += 1) {
+    const interest = balance * periodicRate;
+    const principalPart = Math.min(balance, payment - interest);
+    balance = Math.max(0, balance - principalPart);
+    totalInterest += interest;
+    const paymentDate = addMonths(startDate, (index - 1) * monthsBetweenPayments);
+
+    if (index <= fixationPayments) {
+      fixationInterestPaid += interest;
+      fixationPrincipalPaid += principalPart;
+      schedule.push({
+        index,
+        date: formatDate(paymentDate),
+        payment,
+        interest,
+        principal: principalPart,
+        balance
+      });
+    }
+
+    if (index === fixationPayments) {
+      remainingAfterFixation = balance;
+      fixationEndDate = formatDate(paymentDate);
+    }
+  }
 
   return {
-    payment: firstSegment.payment,
-    refinancePayment: refinanceSegment?.payment ?? 0,
-    totalPayments,
-    totalPaid,
+    payment,
+    totalPayments: normalizedTotalPayments,
+    totalPaid: payment * normalizedTotalPayments,
     totalInterest,
-    fixationInterestPaid: firstSegment.totalInterest,
-    fixationPrincipalPaid: firstSegment.totalPrincipal,
-    fixationTotalPaid: firstSegment.totalPaid,
-    remainingAfterFixation: firstSegment.remainingBalance,
-    fixationEndDate: firstSegment.endDate,
-    refinanceEndDate: refinanceSegment?.endDate ?? firstSegment.endDate,
-    firstFixationSchedule: firstSegment.schedule,
-    refinanceSchedule: refinanceSegment?.schedule ?? [],
-    refinanceInterestPaid: refinanceSegment?.totalInterest ?? 0,
-    refinancePrincipalPaid: refinanceSegment?.totalPrincipal ?? 0,
-    refinanceTotalPaid: refinanceSegment?.totalPaid ?? 0,
-    remainingYearsAfterFixation: remainingPayments / paymentsPerYear,
+    fixationInterestPaid,
+    fixationPrincipalPaid,
+    fixationTotalPaid: fixationInterestPaid + fixationPrincipalPaid,
+    remainingAfterFixation,
+    fixationEndDate,
+    schedule,
     intervalLabel:
-      intervalOptions.find((option) => option.value === paymentsPerYear)?.label ??
-      `${paymentsPerYear}x rocne`
+      intervalOptions.find((option) => option.value === normalizedPaymentsPerYear)?.label ??
+      `${normalizedPaymentsPerYear}x rocne`
+  };
+}
+
+export function calculateInvestment({
+  contribution,
+  annualReturn,
+  years = 30,
+  contributionsPerYear = 12
+}) {
+  const normalizedContribution = toNumber(contribution);
+  const normalizedAnnualReturn = toNumber(annualReturn);
+  const normalizedYears = toNumber(years);
+  const normalizedContributionsPerYear = toNumber(contributionsPerYear);
+  const totalContributions = normalizedYears * normalizedContributionsPerYear;
+  const periodicRate =
+    normalizedAnnualReturn / 100 / normalizedContributionsPerYear;
+  let balance = 0;
+
+  for (let index = 0; index < totalContributions; index += 1) {
+    balance = balance * (1 + periodicRate) + normalizedContribution;
+  }
+
+  const investedPrincipal = normalizedContribution * totalContributions;
+
+  return {
+    futureValue: balance,
+    investedPrincipal,
+    profit: balance - investedPrincipal,
+    totalContributions,
+    years: normalizedYears
   };
 }

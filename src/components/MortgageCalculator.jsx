@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  calculateInvestment,
   calculateMortgage,
   fixationOptions,
   formatCurrency,
@@ -8,13 +9,14 @@ import {
 } from "../lib/mortgage.js";
 
 const initialValues = {
-  principal: 10000000,
-  annualRate: 6,
-  years: 20,
-  paymentsPerYear: 12,
-  fixationYears: 5,
+  principal: "10000000",
+  annualRate: "6",
+  years: "20",
+  paymentsPerYear: "12",
+  fixationYears: "5",
   firstPaymentDate: "2026-04-01",
-  refinanceRate: 4.8
+  investmentReturn: "10",
+  investmentContribution: ""
 };
 
 function SummaryCard({ label, value, note, highlight = false }) {
@@ -27,48 +29,16 @@ function SummaryCard({ label, value, note, highlight = false }) {
   );
 }
 
-function ScheduleTable({ title, note, rows }) {
-  return (
-    <section className="panel schedule-panel">
-      <div className="schedule-header">
-        <div>
-          <p className="results-label">Splatkovy kalendar</p>
-          <h2>{title}</h2>
-        </div>
-        <p className="schedule-note">{note}</p>
-      </div>
-
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Datum</th>
-              <th>Splatka</th>
-              <th>Urok</th>
-              <th>Jistina</th>
-              <th>Zustatek</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={`${title}-${row.index}`}>
-                <td>{row.index}</td>
-                <td>{row.date}</td>
-                <td>{formatCurrency(row.payment)}</td>
-                <td>{formatCurrency(row.interest)}</td>
-                <td>{formatCurrency(row.principal)}</td>
-                <td>{formatCurrency(row.balance)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function ChartPanel({ title, note, total, principalValue, principalShare, interestValue, interestShare, centerLabel }) {
+function ChartPanel({
+  title,
+  note,
+  total,
+  principalValue,
+  principalShare,
+  interestValue,
+  interestShare,
+  centerLabel
+}) {
   return (
     <section className="panel chart-panel">
       <div className="schedule-header">
@@ -118,12 +88,64 @@ function ChartPanel({ title, note, total, principalValue, principalShare, intere
   );
 }
 
+function ScheduleTable({ rows, fixationYears }) {
+  return (
+    <details className="panel schedule-panel">
+      <summary className="schedule-toggle">
+        <div>
+          <p className="results-label">Splatkovy kalendar</p>
+          <h2>Obdobi fixace ({fixationYears} let)</h2>
+        </div>
+        <span>Zobrazit</span>
+      </summary>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Datum</th>
+              <th>Splatka</th>
+              <th>Urok</th>
+              <th>Jistina</th>
+              <th>Zustatek</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.index}>
+                <td>{row.index}</td>
+                <td>{row.date}</td>
+                <td>{formatCurrency(row.payment)}</td>
+                <td>{formatCurrency(row.interest)}</td>
+                <td>{formatCurrency(row.principal)}</td>
+                <td>{formatCurrency(row.balance)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  );
+}
+
 function MortgageCalculator() {
   const [values, setValues] = useState(initialValues);
 
   const result = calculateMortgage(values);
-  const principalShare = (values.principal / result.totalPaid) * 100;
-  const interestShare = (result.totalInterest / result.totalPaid) * 100;
+  const investmentContribution =
+    values.investmentContribution === ""
+      ? result.payment
+      : Number(values.investmentContribution);
+  const investment = calculateInvestment({
+    contribution: investmentContribution,
+    annualReturn: values.investmentReturn,
+    years: 30,
+    contributionsPerYear: values.paymentsPerYear
+  });
+  const principalShare = result.totalPaid === 0 ? 0 : (Number(values.principal || 0) / result.totalPaid) * 100;
+  const interestShare =
+    result.totalPaid === 0 ? 0 : (result.totalInterest / result.totalPaid) * 100;
   const fixationPrincipalShare =
     result.fixationTotalPaid === 0
       ? 0
@@ -132,13 +154,21 @@ function MortgageCalculator() {
     result.fixationTotalPaid === 0
       ? 0
       : (result.fixationInterestPaid / result.fixationTotalPaid) * 100;
+  const investmentPrincipalShare =
+    investment.futureValue === 0
+      ? 0
+      : (investment.investedPrincipal / investment.futureValue) * 100;
+  const investmentProfitShare =
+    investment.futureValue === 0
+      ? 0
+      : (investment.profit / investment.futureValue) * 100;
 
   function handleChange(event) {
-    const { name, value, type } = event.target;
+    const { name, value } = event.target;
 
     setValues((current) => ({
       ...current,
-      [name]: type === "date" ? value : Number(value)
+      [name]: value
     }));
   }
 
@@ -237,43 +267,10 @@ function MortgageCalculator() {
               value={formatCurrency(result.remainingAfterFixation)}
               note={`Konec fixace: ${result.fixationEndDate}`}
             />
-            <SummaryCard
-              label="Nova splatka po refinancovani"
-              value={formatCurrency(result.refinancePayment)}
-              note={`Zbyvajici doba: ${result.remainingYearsAfterFixation} let`}
-            />
             <SummaryCard label="Urok za prvni fixaci" value={formatCurrency(result.fixationInterestPaid)} />
             <SummaryCard label="Jistina za prvni fixaci" value={formatCurrency(result.fixationPrincipalPaid)} />
           </div>
         </article>
-      </section>
-
-      <section className="panel refinance-panel">
-        <div className="results-header">
-          <div>
-            <p className="results-label">Refinancovani</p>
-            <h2>Druha sazba po konci fixace</h2>
-          </div>
-          <p className="schedule-note">
-            Po konci prvni fixace se nova sazba aplikuje na zbyvajici jistinu a prepocita se nova splatka.
-          </p>
-        </div>
-
-        <div className="refinance-layout">
-          <label className="field">
-            <span>Nova urokova mira po fixaci</span>
-            <div className="input-wrap">
-              <input max="30" min="0.1" name="refinanceRate" step="0.1" type="number" value={values.refinanceRate} onChange={handleChange} />
-              <em>%</em>
-            </div>
-          </label>
-
-          <SummaryCard
-            label="Refinancovana castka"
-            value={formatCurrency(result.remainingAfterFixation)}
-            note={`Nova etapa do ${result.refinanceEndDate}`}
-          />
-        </div>
       </section>
 
       <ChartPanel
@@ -298,19 +295,118 @@ function MortgageCalculator() {
         interestShare={fixationInterestShare}
       />
 
-      <ScheduleTable
-        title={`Prvni fixace (${values.fixationYears} let)`}
-        note="Tabulka ukazuje cele obdobi prvni fixace."
-        rows={result.firstFixationSchedule}
-      />
+      <section className="panel investment-panel">
+        <div className="results-header">
+          <div>
+            <p className="results-label">Investicni graf</p>
+            <h2>Co by udelala stejna castka za 30 let</h2>
+          </div>
+          <p className="schedule-note">
+            Kalkulace pocita s pravidelnym investovanim castky ve vysi splatky
+            do investice se zadanym rocnim zhodnocenim.
+          </p>
+        </div>
 
-      {result.refinanceSchedule.length > 0 ? (
-        <ScheduleTable
-          title={`Po refinancovani (${values.fixationYears} let nebo do konce uveru)`}
-          note="Po zadani nove sazby se zbyvajici castka refinancuje a zobrazi se dalsi etapa splaceni."
-          rows={result.refinanceSchedule}
-        />
-      ) : null}
+        <div className="investment-layout">
+          <label className="field">
+            <span>Rocni zhodnoceni investice</span>
+            <div className="input-wrap">
+              <input
+                max="30"
+                min="0.1"
+                name="investmentReturn"
+                step="0.1"
+                type="number"
+                value={values.investmentReturn}
+                onChange={handleChange}
+              />
+              <em>%</em>
+            </div>
+          </label>
+
+          <div className="summary-grid">
+            <SummaryCard
+              highlight
+              label="Budouci hodnota po 30 letech"
+              value={formatCurrency(investment.futureValue)}
+            />
+            <SummaryCard
+              label="Celkove vlozeno"
+              value={formatCurrency(investment.investedPrincipal)}
+            />
+            <SummaryCard
+              label="Vynos investice"
+              value={formatCurrency(investment.profit)}
+            />
+            <SummaryCard
+              label="Pravidelny vklad"
+              value={formatCurrency(investmentContribution)}
+              note={
+                values.investmentContribution === ""
+                  ? `${investment.totalContributions} vkladu, automaticky podle splatky`
+                  : `${investment.totalContributions} vkladu`
+              }
+            />
+          </div>
+        </div>
+
+        <div className="investment-layout single-input">
+          <label className="field">
+            <span>Pravidelny vklad</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="investmentContribution"
+                step="100"
+                type="number"
+                value={values.investmentContribution}
+                onChange={handleChange}
+              />
+              <em>Kc</em>
+            </div>
+          </label>
+        </div>
+
+        <div className="chart-layout">
+          <div
+            aria-label="Investicni graf"
+            className="donut-chart investment-donut"
+            role="img"
+            style={{ "--principal-share": `${investmentPrincipalShare}%` }}
+          >
+            <div className="donut-center">
+              <span>Investice</span>
+              <strong>{formatCurrency(investment.futureValue)}</strong>
+            </div>
+          </div>
+
+          <div className="chart-legend">
+            <div className="legend-row">
+              <span className="legend-swatch contribution" />
+              <div>
+                <strong>Vlozene penize</strong>
+                <p>
+                  {formatCurrency(investment.investedPrincipal)} (
+                  {investmentPrincipalShare.toFixed(1)} %)
+                </p>
+              </div>
+            </div>
+
+            <div className="legend-row">
+              <span className="legend-swatch profit" />
+              <div>
+                <strong>Vynos</strong>
+                <p>
+                  {formatCurrency(investment.profit)} (
+                  {investmentProfitShare.toFixed(1)} %)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <ScheduleTable fixationYears={values.fixationYears} rows={result.schedule} />
     </main>
   );
 }

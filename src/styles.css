@@ -197,11 +197,20 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.refinance-layout {
+.investment-panel {
+  margin-bottom: 1rem;
+}
+
+.investment-layout {
   display: grid;
   grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
-  gap: 0.85rem;
+  gap: 1rem;
   align-items: start;
+}
+
+.single-input {
+  grid-template-columns: minmax(0, 320px);
+  margin-top: 1rem;
 }
 
 .chart-layout {
@@ -290,8 +299,45 @@ h2 {
   background: #dc2626;
 }
 
+.investment-donut {
+  background: conic-gradient(
+    #0f766e 0 var(--principal-share),
+    #eab308 var(--principal-share) 100%
+  );
+}
+
+.legend-swatch.contribution {
+  background: #0f766e;
+}
+
+.legend-swatch.profit {
+  background: #eab308;
+}
+
 .table-wrap {
   overflow-x: auto;
+}
+
+.schedule-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.schedule-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.schedule-toggle span {
+  color: #666666;
+  font-size: 0.92rem;
+}
+
+.schedule-panel[open] .schedule-toggle {
+  padding-bottom: 0.25rem;
 }
 
 table {
@@ -323,7 +369,7 @@ tbody tr:last-child td {
   .calculator-layout,
   .field-grid,
   .summary-grid,
-  .refinance-layout {
+  .investment-layout {
     grid-template-columns: 1fr;
   }
 
