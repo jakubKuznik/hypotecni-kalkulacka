@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./mortgage.css";
 import {
   calculateInvestment,
   calculateInflationAdjustedPayment,
@@ -6,10 +7,10 @@ import {
   calculatePropertyYield,
   fixationOptions,
   formatCurrency,
-  formatPercentLegend,
   formatPercent,
+  formatPercentLegend,
   intervalOptions
-} from "../lib/mortgage.js";
+} from "./lib/mortgage.js";
 
 const initialValues = {
   principal: "8000000",
@@ -135,7 +136,7 @@ function ScheduleTable({ rows, fixationYears }) {
   );
 }
 
-function MortgageCalculator() {
+function MortgageCalculatorApp() {
   const [values, setValues] = useState(initialValues);
 
   const principalAmount = Number(values.principal || 0);
@@ -155,9 +156,9 @@ function MortgageCalculator() {
     years: investmentYears,
     contributionsPerYear: values.paymentsPerYear
   });
-  const principalShare = result.totalPaid === 0 ? 0 : (Number(values.principal || 0) / result.totalPaid) * 100;
-  const interestShare =
-    result.totalPaid === 0 ? 0 : (result.totalInterest / result.totalPaid) * 100;
+  const principalShare =
+    result.totalPaid === 0 ? 0 : (Number(values.principal || 0) / result.totalPaid) * 100;
+  const interestShare = result.totalPaid === 0 ? 0 : (result.totalInterest / result.totalPaid) * 100;
   const fixationPrincipalShare =
     result.fixationTotalPaid === 0
       ? 0
@@ -171,9 +172,7 @@ function MortgageCalculator() {
       ? 0
       : (investment.investedPrincipal / investment.futureValue) * 100;
   const investmentProfitShare =
-    investment.futureValue === 0
-      ? 0
-      : (investment.profit / investment.futureValue) * 100;
+    investment.futureValue === 0 ? 0 : (investment.profit / investment.futureValue) * 100;
   const propertyYield = calculatePropertyYield({
     propertyValue,
     annualYieldPercent: values.propertyAnnualYield,
@@ -203,10 +202,13 @@ function MortgageCalculator() {
   }
 
   return (
-    <main className="page-shell">
+    <div className="mortgage-app">
       <section className="hero">
         <div>
           <p className="eyebrow">Hypotecni kalkulacka</p>
+          <p className="lead">
+            Samostatna aplikace pro hypoteku, investice a porovnani dlouhodobe hodnoty penez.
+          </p>
         </div>
       </section>
 
@@ -303,19 +305,19 @@ function MortgageCalculator() {
             <SummaryCard label="Celkova castka" value={formatCurrency(result.totalPaid)} />
             <SummaryCard label="Celkovy urok" value={formatCurrency(result.totalInterest)} />
             <SummaryCard label="Pocet splatek" value={result.totalPayments} />
-          <SummaryCard
-            label="Zbyvajici jistina po fixaci"
-            value={formatCurrency(result.remainingAfterFixation)}
-            note={`Konec fixace: ${result.fixationEndDate}`}
-          />
-          <SummaryCard
-            label="Vlastni kapital"
-            value={formatCurrency(ownCapital)}
-            note={`${values.ownCapitalPercent} %`}
-          />
-          <SummaryCard label="Urok za prvni fixaci" value={formatCurrency(result.fixationInterestPaid)} />
-          <SummaryCard label="Jistina za prvni fixaci" value={formatCurrency(result.fixationPrincipalPaid)} />
-        </div>
+            <SummaryCard
+              label="Zbyvajici jistina po fixaci"
+              value={formatCurrency(result.remainingAfterFixation)}
+              note={`Konec fixace: ${result.fixationEndDate}`}
+            />
+            <SummaryCard
+              label="Vlastni kapital"
+              value={formatCurrency(ownCapital)}
+              note={`${values.ownCapitalPercent} %`}
+            />
+            <SummaryCard label="Urok za prvni fixaci" value={formatCurrency(result.fixationInterestPaid)} />
+            <SummaryCard label="Jistina za prvni fixaci" value={formatCurrency(result.fixationPrincipalPaid)} />
+          </div>
         </article>
       </section>
 
@@ -348,8 +350,8 @@ function MortgageCalculator() {
             <h2>Co by udelala stejna castka za zvolene obdobi</h2>
           </div>
           <p className="schedule-note">
-            Kalkulace pocita s pravidelnym investovanim castky ve vysi splatky
-            do investice se zadanym rocnim zhodnocenim.
+            Kalkulace pocita s pravidelnym investovanim castky ve vysi splatky do investice se
+            zadanym rocnim zhodnocenim.
           </p>
         </div>
 
@@ -449,8 +451,7 @@ function MortgageCalculator() {
               <div>
                 <strong>Vlozene penize</strong>
                 <p>
-                  {formatCurrency(investment.investedPrincipal)} (
-                  {investmentPrincipalShare.toFixed(1)} %)
+                  {formatCurrency(investment.investedPrincipal)} ({investmentPrincipalShare.toFixed(1)} %)
                 </p>
               </div>
             </div>
@@ -460,8 +461,7 @@ function MortgageCalculator() {
               <div>
                 <strong>Vynos</strong>
                 <p>
-                  {formatCurrency(investment.profit)} (
-                  {investmentProfitShare.toFixed(1)} %)
+                  {formatCurrency(investment.profit)} ({investmentProfitShare.toFixed(1)} %)
                 </p>
               </div>
             </div>
@@ -476,8 +476,7 @@ function MortgageCalculator() {
             <h2>Vyvoj hodnoty po 5 az 30 letech</h2>
           </div>
           <p className="schedule-note">
-            Vypocet pocita slozene rocni zhodnoceni ceny nemovitosti a porovnava
-            ho s finalni cenou.
+            Vypocet pocita slozene rocni zhodnoceni ceny nemovitosti a porovnava ho s finalni cenou.
           </p>
         </div>
 
@@ -501,7 +500,6 @@ function MortgageCalculator() {
               <em>%</em>
             </div>
           </label>
-
         </div>
 
         <div className="summary-grid">
@@ -563,11 +561,10 @@ function MortgageCalculator() {
         <div className="results-header">
           <div>
             <p className="results-label">Inflacni zohledneni</p>
-            <h2>Kolik ma stejna splatka hodnotu v budoucích penezich</h2>
+            <h2>Kolik ma stejna splatka hodnotu v budoucich penezich</h2>
           </div>
           <p className="schedule-note">
-            Graf ukazuje realnou hodnotu stejne nominalni splatky pri slozene
-            inflaci v case.
+            Graf ukazuje realnou hodnotu stejne nominalni splatky pri slozene inflaci v case.
           </p>
         </div>
 
@@ -625,8 +622,8 @@ function MortgageCalculator() {
       </section>
 
       <ScheduleTable fixationYears={values.fixationYears} rows={result.schedule} />
-    </main>
+    </div>
   );
 }
 
-export default MortgageCalculator;
+export default MortgageCalculatorApp;

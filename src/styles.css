@@ -1,7 +1,9 @@
 :root {
   font-family: "Segoe UI", sans-serif;
   color: #161616;
-  background: #f5f5f3;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.9), transparent 40%),
+    linear-gradient(180deg, #f2efe8, #f7f5ef 24rem, #efece4 100%);
   line-height: 1.5;
   font-weight: 400;
 }
@@ -10,11 +12,15 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #f5f5f3;
+  background: transparent;
 }
 
 body,
@@ -24,43 +30,15 @@ button {
   font-family: inherit;
 }
 
-#root {
-  min-height: 100vh;
+button,
+input,
+select {
+  font: inherit;
 }
 
-.page-shell {
-  width: min(1100px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 2.5rem 0 4rem;
-}
-
-.hero {
-  display: grid;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.eyebrow,
-.results-label {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #737373;
-}
-
-h1,
 h2,
 p {
   margin: 0;
-}
-
-h1 {
-  max-width: 12ch;
-  font-size: clamp(2.4rem, 5vw, 4.2rem);
-  line-height: 0.96;
-  font-weight: 600;
 }
 
 h2 {
@@ -68,405 +46,76 @@ h2 {
   font-weight: 600;
 }
 
-.lead {
-  max-width: 42rem;
-  color: #525252;
-  font-size: 1rem;
+#root {
+  min-height: 100vh;
 }
 
-.calculator-layout {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+.global-shell {
+  min-height: 100vh;
 }
 
-.panel {
-  display: grid;
-  gap: 1.25rem;
-  padding: 1.25rem;
-  border: 1px solid #ddddda;
-  border-radius: 18px;
-  background: #fbfbfa;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02);
+.global-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  background: rgba(247, 245, 239, 0.72);
+  border-bottom: 1px solid rgba(201, 195, 183, 0.42);
 }
 
-.field-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+.global-header__inner,
+.global-content {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
 }
 
-.field {
-  display: grid;
-  gap: 0.4rem;
+.global-header__inner {
+  padding: 0.55rem 0;
 }
 
-.field-static {
-  align-content: start;
-  min-height: 54px;
-  padding: 0.85rem;
-  border: 1px solid #d6d6d3;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.field-static strong {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.field span {
-  font-size: 0.84rem;
-  color: #616161;
-}
-
-.input-wrap,
-.select-wrap {
+.app-nav {
   display: flex;
-  align-items: center;
-  min-height: 54px;
-  padding: 0 0.85rem;
-  border: 1px solid #d6d6d3;
-  border-radius: 12px;
-  background: #ffffff;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.input-wrap input,
-.select-wrap select {
-  width: 100%;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #161616;
-  font-size: 1rem;
-}
-
-.input-wrap em {
-  font-style: normal;
-  color: #757575;
-  white-space: nowrap;
-}
-
-.results-header,
-.schedule-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.rate-badge {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 132px;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid #d6d6d3;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.rate-badge span {
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-.rate-badge small,
-.schedule-note,
-.summary-card small {
-  color: #6b6b6b;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.summary-card {
-  display: grid;
-  gap: 0.3rem;
-  padding: 1rem;
-  border: 1px solid #e0e0dd;
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.summary-card span {
-  color: #666666;
-  font-size: 0.9rem;
-}
-
-.summary-card strong {
-  font-size: clamp(1.15rem, 2.1vw, 1.6rem);
-  font-weight: 600;
-}
-
-.highlight {
-  border-color: #161616;
-}
-
-.chart-panel {
-  margin-bottom: 1rem;
-}
-
-.investment-panel {
-  margin-bottom: 1rem;
-}
-
-.property-panel {
-  margin-bottom: 1rem;
-}
-
-.inflation-panel {
-  margin-bottom: 1rem;
-}
-
-.investment-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.single-input {
-  grid-template-columns: repeat(2, minmax(0, 320px));
-  margin-top: 1rem;
-}
-
-.chart-layout {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 1.25rem;
-  align-items: center;
-}
-
-.donut-chart {
-  --principal-share: 50%;
-  width: 280px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: conic-gradient(
-    #2563eb 0 var(--principal-share),
-    #dc2626 var(--principal-share) 100%
-  );
-}
-
-.donut-center {
-  width: 62%;
-  aspect-ratio: 1;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.25rem;
-  padding: 1rem;
-  border-radius: 50%;
-  background: #fbfbfa;
-  text-align: center;
-}
-
-.donut-center span {
-  font-size: 0.82rem;
-  color: #737373;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.donut-center strong {
-  font-size: 1rem;
-  line-height: 1.3;
-}
-
-.chart-legend {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.legend-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 0.95rem 1rem;
-  border: 1px solid #e0e0dd;
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.legend-row strong {
-  display: block;
-  margin-bottom: 0.15rem;
-  font-size: 0.95rem;
-}
-
-.legend-row p {
-  color: #666666;
-}
-
-.legend-swatch {
-  width: 12px;
-  height: 12px;
-  margin-top: 0.3rem;
+.app-nav__button {
+  min-height: 34px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #cdc5b8;
   border-radius: 999px;
-  flex: 0 0 auto;
-}
-
-.legend-swatch.principal {
-  background: #2563eb;
-}
-
-.legend-swatch.interest {
-  background: #dc2626;
-}
-
-.investment-donut {
-  background: conic-gradient(
-    #0f766e 0 var(--principal-share),
-    #eab308 var(--principal-share) 100%
-  );
-}
-
-.legend-swatch.contribution {
-  background: #0f766e;
-}
-
-.legend-swatch.profit {
-  background: #eab308;
-}
-
-.property-chart {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0.85rem;
-  align-items: end;
-  min-height: 280px;
-}
-
-.property-bar-group {
-  display: grid;
-  gap: 0.55rem;
-  align-items: end;
-}
-
-.property-bar-value {
-  font-size: 0.78rem;
-  color: #666666;
-}
-
-.property-bar-track {
-  height: 180px;
-  display: flex;
-  align-items: end;
-  padding: 0.4rem;
-  border: 1px solid #e0e0dd;
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.property-bar-fill {
-  width: 100%;
-  min-height: 12px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #7c3aed, #f97316);
-}
-
-.inflation-bar-fill {
-  background: linear-gradient(180deg, #0f172a, #38bdf8);
-}
-
-.property-bar-group strong {
-  font-size: 0.88rem;
-}
-
-.property-bar-note {
-  font-size: 0.78rem;
-  color: #666666;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-.schedule-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  background: rgba(255, 252, 245, 0.8);
+  color: #3e382e;
   cursor: pointer;
-  list-style: none;
-}
-
-.schedule-toggle::-webkit-details-marker {
-  display: none;
-}
-
-.schedule-toggle span {
-  color: #666666;
   font-size: 0.92rem;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    border-color 140ms ease;
 }
 
-.schedule-panel[open] .schedule-toggle {
-  padding-bottom: 0.25rem;
+.app-nav__button:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+.app-nav__button.is-active {
+  border-color: #161616;
+  background: #161616;
+  color: #f7f5ef;
 }
 
-th,
-td {
-  padding: 0.9rem 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid #ecece9;
-  white-space: nowrap;
+.global-content {
+  padding: 0.85rem 0 3rem;
 }
 
-th {
-  font-size: 0.76rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #737373;
+.app-frame {
+  display: block;
 }
 
-tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-@media (max-width: 860px) {
-  .calculator-layout,
-  .field-grid,
-  .summary-grid,
-  .investment-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
-  .property-chart {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .page-shell {
-    width: min(100% - 1rem, 1100px);
-    padding-top: 1.5rem;
-  }
-
-  .results-header,
-  .schedule-header {
-    flex-direction: column;
-  }
-
-  th,
-  td {
-    min-width: 120px;
+@media (max-width: 700px) {
+  .global-header__inner,
+  .global-content {
+    width: min(100% - 1rem, 1180px);
   }
 }

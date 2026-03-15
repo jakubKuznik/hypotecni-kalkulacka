@@ -1,0 +1,62 @@
+.placeholder-app {
+  display: grid;
+  gap: 1rem;
+}
+
+.placeholder-hero {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid #d8d4ca;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(193, 232, 212, 0.85), transparent 32%),
+    linear-gradient(135deg, #fffaf1, #f2eee4);
+}
+
+.placeholder-hero__eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6d675c;
+}
+
+.placeholder-hero__text {
+  max-width: 42rem;
+  color: #5d584f;
+}
+
+.placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.placeholder-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid #dfdbd2;
+  border-radius: 18px;
+  background: #fffdf8;
+}
+
+.placeholder-card strong {
+  font-size: 1.15rem;
+}
+
+.placeholder-card p {
+  color: #5f5a51;
+}
+
+.placeholder-card--accent {
+  background: linear-gradient(135deg, #edf7f0, #f7f2e8);
+}
+
+@media (max-width: 700px) {
+  .placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+}

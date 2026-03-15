@@ -172,8 +172,7 @@ export function calculateInvestment({
   const normalizedYears = toNumber(years);
   const normalizedContributionsPerYear = toNumber(contributionsPerYear);
   const totalContributions = normalizedYears * normalizedContributionsPerYear;
-  const periodicRate =
-    normalizedAnnualReturn / 100 / normalizedContributionsPerYear;
+  const periodicRate = normalizedAnnualReturn / 100 / normalizedContributionsPerYear;
   let balance = 0;
 
   for (let index = 0; index < totalContributions; index += 1) {
@@ -181,8 +180,7 @@ export function calculateInvestment({
   }
 
   const investedPrincipal = normalizedContribution * totalContributions;
-  const appreciationPercent =
-    investedPrincipal === 0 ? 0 : (balance / investedPrincipal) * 100;
+  const appreciationPercent = investedPrincipal === 0 ? 0 : (balance / investedPrincipal) * 100;
 
   return {
     futureValue: balance,
@@ -204,13 +202,11 @@ export function calculatePropertyYield({
   const normalizedAnnualYieldPercent = toNumber(annualYieldPercent);
   const normalizedFinalPrice = toNumber(finalPrice);
   const normalizedInitialCapital = toNumber(initialCapital);
-  const annualYieldAmount =
-    normalizedPropertyValue * (normalizedAnnualYieldPercent / 100);
+  const annualYieldAmount = normalizedPropertyValue * (normalizedAnnualYieldPercent / 100);
   const monthlyYieldAmount = annualYieldAmount / 12;
   const horizons = [5, 10, 15, 20, 25, 30].map((years) => {
     const estimatedPrice =
-      normalizedPropertyValue *
-      Math.pow(1 + normalizedAnnualYieldPercent / 100, years);
+      normalizedPropertyValue * Math.pow(1 + normalizedAnnualYieldPercent / 100, years);
     const profitAgainstFinalPrice = estimatedPrice - normalizedFinalPrice;
     const totalProfit = estimatedPrice - normalizedPropertyValue;
     const totalYieldPercent =
@@ -221,8 +217,8 @@ export function calculatePropertyYield({
     return {
       years,
       estimatedPrice,
-      profitAgainstFinalPrice,
       totalProfit,
+      profitAgainstFinalPrice,
       totalYieldPercent,
       leveragedYieldPercent
     };
@@ -237,25 +233,17 @@ export function calculatePropertyYield({
   };
 }
 
-export function calculateInflationAdjustedPayment({
-  payment,
-  annualInflation
-}) {
+export function calculateInflationAdjustedPayment({ payment, annualInflation }) {
   const normalizedPayment = toNumber(payment);
   const normalizedAnnualInflation = toNumber(annualInflation);
-  const horizons = [5, 10, 15, 20, 25, 30].map((years) => {
-    const presentValue =
-      normalizedPayment / Math.pow(1 + normalizedAnnualInflation / 100, years);
-
-    return {
-      years,
-      presentValue
-    };
-  });
+  const horizons = [5, 10, 15, 20, 25, 30].map((years) => ({
+    years,
+    presentValue:
+      normalizedPayment / Math.pow(1 + normalizedAnnualInflation / 100, years)
+  }));
 
   return {
     currentPayment: normalizedPayment,
-    annualInflation: normalizedAnnualInflation,
     horizons
   };
 }
