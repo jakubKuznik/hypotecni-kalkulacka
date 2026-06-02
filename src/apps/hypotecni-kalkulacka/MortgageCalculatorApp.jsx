@@ -3,8 +3,10 @@ import "./mortgage.css";
 import {
   calculateInvestment,
   calculateInflationAdjustedPayment,
+  calculateRentHorizons,
   calculateMortgage,
   calculatePropertyYield,
+  calculateRentProjection,
   fixationOptions,
   formatCurrency,
   formatPercent,
@@ -21,10 +23,11 @@ const initialValues = {
   fixationYears: "5",
   firstPaymentDate: "2026-04-01",
   investmentReturn: "10",
-  investmentContribution: "",
   investmentYears: "",
   inflationRate: "3",
-  propertyAnnualYield: "3"
+  propertyAnnualYield: "3",
+  monthlyRent: "20000",
+  annualRentGrowth: "3"
 };
 
 function SummaryCard({ label, value, note, highlight = false }) {
@@ -144,17 +147,30 @@ function MortgageCalculatorApp() {
   const result = calculateMortgage(values);
   const ownCapital = principalAmount * (ownCapitalPercent / 100);
   const propertyValue = principalAmount + ownCapital;
-  const investmentContribution =
-    values.investmentContribution === ""
-      ? result.payment
-      : Number(values.investmentContribution);
+  const investmentContribution = result.payment;
   const investmentYears =
     values.investmentYears === "" ? Number(values.years || 0) : Number(values.investmentYears);
   const investment = calculateInvestment({
     contribution: investmentContribution,
     annualReturn: values.investmentReturn,
     years: investmentYears,
-    contributionsPerYear: values.paymentsPerYear
+    contributionsPerYear: values.paymentsPerYear,
+    monthlyExpense: values.monthlyRent,
+    annualExpenseGrowth: values.annualRentGrowth
+  });
+  const rentDuringFixation = calculateRentProjection({
+    monthlyRent: values.monthlyRent,
+    annualGrowth: values.annualRentGrowth,
+    years: values.fixationYears
+  });
+  const rentDuringInvestmentHorizon = calculateRentProjection({
+    monthlyRent: values.monthlyRent,
+    annualGrowth: values.annualRentGrowth,
+    years: investmentYears
+  });
+  const rentHorizons = calculateRentHorizons({
+    monthlyRent: values.monthlyRent,
+    annualGrowth: values.annualRentGrowth
   });
   const principalShare =
     result.totalPaid === 0 ? 0 : (Number(values.principal || 0) / result.totalPaid) * 100;
@@ -191,6 +207,7 @@ function MortgageCalculatorApp() {
     ...inflationView.horizons.map((item) => item.presentValue),
     1
   );
+  const maxRentValue = Math.max(...rentHorizons.map((item) => item.totalPaid), 1);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -343,6 +360,88 @@ function MortgageCalculatorApp() {
         interestShare={fixationInterestShare}
       />
 
+      <section className="panel">
+        <div className="results-header">
+          <div>
+            <p className="results-label">Uspora na najmu</p>
+            <h2>Kolik najmu odpadne behem prvni fixace</h2>
+          </div>
+          <p className="schedule-note">
+            Projekce pocita s mesicnim najmem a jeho mezirocnim rustem po dobu prvni fixace.
+          </p>
+        </div>
+
+        <div className="field-grid">
+          <label className="field">
+            <span>Mesicni cena najmu</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="monthlyRent"
+                step="100"
+                type="number"
+                value={values.monthlyRent}
+                onChange={handleChange}
+              />
+              <em>Kc</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Prumerny rocni rust ceny najmu</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="annualRentGrowth"
+                step="0.1"
+                type="number"
+                value={values.annualRentGrowth}
+                onChange={handleChange}
+              />
+              <em>%</em>
+            </div>
+          </label>
+        </div>
+
+        <div className="summary-grid">
+          <SummaryCard
+            highlight
+            label="Usetreny najem behem fixace"
+            value={formatCurrency(rentDuringFixation.totalPaid)}
+            note={`${values.fixationYears} let`}
+          />
+          <SummaryCard
+            label="Prumerny najem za mesic"
+            value={formatCurrency(rentDuringFixation.averageMonthlyRent)}
+          />
+          <SummaryCard
+            label="Odhad najmu na konci fixace"
+            value={formatCurrency(rentDuringFixation.finalMonthlyRent)}
+          />
+          <SummaryCard
+            label="Rozdil proti splatkam behem fixace"
+            value={formatCurrency(rentDuringFixation.totalPaid - result.fixationTotalPaid)}
+            note="kladne cislo znamena drazsi najem nez splatky"
+          />
+        </div>
+
+        <div className="property-chart rent-chart">
+          {rentHorizons.map((item) => (
+            <div key={item.years} className="property-bar-group">
+              <div className="property-bar-value">{formatCurrency(item.totalPaid)}</div>
+              <div className="property-bar-track">
+                <div
+                  className="property-bar-fill rent-bar-fill"
+                  style={{ height: `${(item.totalPaid / maxRentValue) * 100}%` }}
+                />
+              </div>
+              <strong>{item.years} let</strong>
+              <span className="property-bar-note">{formatCurrency(item.finalMonthlyRent)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="panel investment-panel">
         <div className="results-header">
           <div>
@@ -350,8 +449,8 @@ function MortgageCalculatorApp() {
             <h2>Co by udelala stejna castka za zvolene obdobi</h2>
           </div>
           <p className="schedule-note">
-            Kalkulace pocita s pravidelnym investovanim castky ve vysi splatky do investice se
-            zadanym rocnim zhodnocenim.
+            Kalkulace pocita s investovanim castky ve vysi splatky snizene o najem v kazdem
+            obdobi. Najem se kazdy rok navysuje podle zadaneho rustu.
           </p>
         </div>
 
@@ -380,7 +479,7 @@ function MortgageCalculatorApp() {
               note={`${investment.years} let`}
             />
             <SummaryCard
-              label="Celkove vlozeno"
+              label="Celkove investovano po odecteni najmu"
               value={formatCurrency(investment.investedPrincipal)}
             />
             <SummaryCard
@@ -389,32 +488,44 @@ function MortgageCalculatorApp() {
               note={`${formatPercent(investment.appreciationPercent)}`}
             />
             <SummaryCard
-              label="Pravidelny vklad"
+              label="Prvni cisty vklad"
+              value={formatCurrency(investment.firstNetContribution)}
+              note={`${investment.totalContributions} vkladu, splatka minus najem`}
+            />
+            <SummaryCard
+              label="Najem za investicni horizont"
+              value={formatCurrency(rentDuringInvestmentHorizon.totalPaid)}
+              note={`${rentDuringInvestmentHorizon.years} let`}
+            />
+            <SummaryCard
+              label="Odhad najmu na konci horizontu"
+              value={formatCurrency(rentDuringInvestmentHorizon.finalMonthlyRent)}
+            />
+            <SummaryCard
+              label="Celkove zaplaceny najem"
+              value={formatCurrency(investment.totalExpenses)}
+            />
+            <SummaryCard
+              label="Pravidelna splatka"
               value={formatCurrency(investmentContribution)}
-              note={
-                values.investmentContribution === ""
-                  ? `${investment.totalContributions} vkladu, automaticky podle splatky`
-                  : `${investment.totalContributions} vkladu`
-              }
+              note="vychozi hruby vklad pred odectenim najmu"
+            />
+            <SummaryCard
+              label="Prumerny cisty vklad"
+              value={formatCurrency(
+                investment.totalContributions === 0
+                  ? 0
+                  : investment.investedPrincipal / investment.totalContributions
+              )}
             />
           </div>
         </div>
 
         <div className="investment-layout single-input">
-          <label className="field">
+          <div className="field field-static">
             <span>Pravidelny vklad</span>
-            <div className="input-wrap">
-              <input
-                min="0"
-                name="investmentContribution"
-                step="100"
-                type="number"
-                value={values.investmentContribution}
-                onChange={handleChange}
-              />
-              <em>Kc</em>
-            </div>
-          </label>
+            <strong>{formatCurrency(result.payment)}</strong>
+          </div>
 
           <label className="field">
             <span>Investicni horizont</span>
@@ -428,6 +539,36 @@ function MortgageCalculatorApp() {
                 onChange={handleChange}
               />
               <em>let</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Mesicni cena najmu</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="monthlyRent"
+                step="100"
+                type="number"
+                value={values.monthlyRent}
+                onChange={handleChange}
+              />
+              <em>Kc</em>
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Prumerny rocni rust ceny najmu</span>
+            <div className="input-wrap">
+              <input
+                min="0"
+                name="annualRentGrowth"
+                step="0.1"
+                type="number"
+                value={values.annualRentGrowth}
+                onChange={handleChange}
+              />
+              <em>%</em>
             </div>
           </label>
         </div>
@@ -449,7 +590,7 @@ function MortgageCalculatorApp() {
             <div className="legend-row">
               <span className="legend-swatch contribution" />
               <div>
-                <strong>Vlozene penize</strong>
+                <strong>Ciste investovano</strong>
                 <p>
                   {formatCurrency(investment.investedPrincipal)} ({investmentPrincipalShare.toFixed(1)} %)
                 </p>

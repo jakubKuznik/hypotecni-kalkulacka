@@ -10,7 +10,7 @@ const applications = [
   },
   {
     id: "placeholder",
-    label: "Placeholder",
+    label: "Portfolio simulator",
     component: PlaceholderApp
   }
 ];

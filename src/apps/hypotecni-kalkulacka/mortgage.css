@@ -176,7 +176,7 @@
 }
 
 .single-input {
-  grid-template-columns: repeat(2, minmax(0, 320px));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
 }
 
 .chart-layout {
@@ -318,6 +318,10 @@
 
 .inflation-bar-fill {
   background: linear-gradient(180deg, #0f172a, #38bdf8);
+}
+
+.rent-bar-fill {
+  background: linear-gradient(180deg, #15803d, #f59e0b);
 }
 
 .property-bar-group strong {

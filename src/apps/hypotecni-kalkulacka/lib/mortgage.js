@@ -165,31 +165,104 @@ export function calculateInvestment({
   contribution,
   annualReturn,
   years = 30,
-  contributionsPerYear = 12
+  contributionsPerYear = 12,
+  monthlyExpense = 0,
+  annualExpenseGrowth = 0
 }) {
   const normalizedContribution = toNumber(contribution);
   const normalizedAnnualReturn = toNumber(annualReturn);
   const normalizedYears = toNumber(years);
   const normalizedContributionsPerYear = toNumber(contributionsPerYear);
+  const normalizedMonthlyExpense = toNumber(monthlyExpense);
+  const normalizedAnnualExpenseGrowth = toNumber(annualExpenseGrowth);
   const totalContributions = normalizedYears * normalizedContributionsPerYear;
   const periodicRate = normalizedAnnualReturn / 100 / normalizedContributionsPerYear;
+  const monthsPerContribution =
+    normalizedContributionsPerYear === 0 ? 0 : 12 / normalizedContributionsPerYear;
   let balance = 0;
+  let investedPrincipal = 0;
+  let totalExpenses = 0;
+  let firstNetContribution = 0;
 
   for (let index = 0; index < totalContributions; index += 1) {
-    balance = balance * (1 + periodicRate) + normalizedContribution;
+    const elapsedMonths = index * monthsPerContribution;
+    const growthYears = Math.floor(elapsedMonths / 12);
+    const expensePerContribution =
+      normalizedMonthlyExpense *
+      monthsPerContribution *
+      Math.pow(1 + normalizedAnnualExpenseGrowth / 100, growthYears);
+    const netContribution = normalizedContribution - expensePerContribution;
+
+    if (index === 0) {
+      firstNetContribution = netContribution;
+    }
+
+    balance = balance * (1 + periodicRate) + netContribution;
+    investedPrincipal += netContribution;
+    totalExpenses += expensePerContribution;
   }
 
-  const investedPrincipal = normalizedContribution * totalContributions;
   const appreciationPercent = investedPrincipal === 0 ? 0 : (balance / investedPrincipal) * 100;
 
   return {
     futureValue: balance,
     investedPrincipal,
     profit: balance - investedPrincipal,
+    grossContribution: normalizedContribution,
+    firstNetContribution,
+    totalExpenses,
     appreciationPercent,
     totalContributions,
     years: normalizedYears
   };
+}
+
+export function calculateRentProjection({ monthlyRent, annualGrowth, years }) {
+  const normalizedMonthlyRent = toNumber(monthlyRent);
+  const normalizedAnnualGrowth = toNumber(annualGrowth);
+  const normalizedYears = toNumber(years);
+  const totalMonths = Math.max(0, Math.round(normalizedYears * 12));
+  let totalPaid = 0;
+
+  for (let month = 0; month < totalMonths; month += 1) {
+    const growthYears = Math.floor(month / 12);
+    const monthlyPayment =
+      normalizedMonthlyRent * Math.pow(1 + normalizedAnnualGrowth / 100, growthYears);
+
+    totalPaid += monthlyPayment;
+  }
+
+  const finalMonthlyRent =
+    totalMonths === 0
+      ? normalizedMonthlyRent
+      : normalizedMonthlyRent *
+        Math.pow(1 + normalizedAnnualGrowth / 100, Math.max(0, Math.ceil(totalMonths / 12) - 1));
+
+  return {
+    monthlyRent: normalizedMonthlyRent,
+    totalPaid,
+    averageMonthlyRent: totalMonths === 0 ? 0 : totalPaid / totalMonths,
+    finalMonthlyRent,
+    years: normalizedYears,
+    totalMonths
+  };
+}
+
+export function calculateRentHorizons({ monthlyRent, annualGrowth, horizons = [5, 10, 15, 20, 25, 30] }) {
+  return horizons.map((years) => {
+    const projection = calculateRentProjection({
+      monthlyRent,
+      annualGrowth,
+      years
+    });
+
+    return {
+      years,
+      totalPaid: projection.totalPaid,
+      averageMonthlyRent: projection.averageMonthlyRent,
+      finalMonthlyRent: projection.finalMonthlyRent
+    };
+  });
 }
 
 export function calculatePropertyYield({

@@ -28,6 +28,93 @@
   color: #5d584f;
 }
 
+.placeholder-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.placeholder-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #dfdbd2;
+  border-radius: 18px;
+  background: #fffdf8;
+}
+
+.placeholder-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.placeholder-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.placeholder-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.placeholder-field span {
+  font-size: 0.88rem;
+  color: #5f5a51;
+}
+
+.placeholder-field--full {
+  padding-top: 0.25rem;
+}
+
+.placeholder-input {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 0.85rem;
+  border: 1px solid #d8d1c5;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.placeholder-input input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 1rem;
+  color: #161616;
+}
+
+.placeholder-input em {
+  font-style: normal;
+  color: #746e62;
+}
+
+.placeholder-range {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0.2rem 0;
+}
+
+.placeholder-range input {
+  flex: 1 1 auto;
+}
+
+.placeholder-note {
+  color: #726b60;
+  font-size: 0.92rem;
+}
+
+.placeholder-results {
+  display: grid;
+  gap: 1rem;
+}
+
 .placeholder-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -55,8 +142,77 @@
   background: linear-gradient(135deg, #edf7f0, #f7f2e8);
 }
 
+.placeholder-insight {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f7f2e6, #edf5ee);
+}
+
+.placeholder-insight strong {
+  font-size: 1.05rem;
+}
+
+.placeholder-bars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: end;
+}
+
+.placeholder-bar-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.placeholder-bar-track {
+  height: 220px;
+  display: flex;
+  align-items: end;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border: 1px solid #e2ddd4;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.placeholder-bar {
+  width: 100%;
+  min-height: 10px;
+  border-radius: 10px 10px 6px 6px;
+}
+
+.placeholder-bar--sp500 {
+  background: linear-gradient(180deg, #222f60, #4f80ff);
+}
+
+.placeholder-bar--mix {
+  background: linear-gradient(180deg, #9a6b17, #efc15b);
+}
+
+.placeholder-bar-group p,
+.placeholder-bar-value {
+  font-size: 0.78rem;
+  color: #625c51;
+}
+
+@media (max-width: 980px) {
+  .placeholder-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .placeholder-panel__header {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 700px) {
   .placeholder-grid {
     grid-template-columns: 1fr;
+  }
+
+  .placeholder-bars {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
